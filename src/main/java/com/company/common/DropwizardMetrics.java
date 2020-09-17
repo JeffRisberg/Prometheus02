@@ -18,7 +18,7 @@ public class DropwizardMetrics {
     // native jvm metrics
     DefaultExports.initialize();
 
-    // Register DropWizard metrics with prometheus default registry
+    // Register Dropwizard metrics with prometheus default registry
     CollectorRegistry.defaultRegistry.register(new DropwizardExports(registry));
   }
 
