@@ -2,4 +2,10 @@
 
 Java code to publish to Prometheus
 
-Add Dropwizard metrics
+Using Dropwizard metrics and a metrics registry.
+
+# How to run it
+
+`gradle shadowjar`
+
+`java -jar build/libs/Prometheus02-0.1.0-all.jar`
