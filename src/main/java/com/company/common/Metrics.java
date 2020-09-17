@@ -2,13 +2,13 @@ package com.company.common;
 
 public enum Metrics {
 
-  // Hello
-  HELLO_COUNT("hello_worlds_total"),
-  HELLO_LATENCY("hello_requests_latency_seconds"),
+  // Hello metrics
+  HELLO_COUNT("hello_count"),
+  HELLO_LATENCY("hello_requests_latency"),
 
-  // Goodbye
-  GOODBYE_COUNT("goodbye_worlds_total"),
-  GOODBYE_LATENCY("goodbye_requests_latency_seconds");
+  // Goodbye metrics
+  GOODBYE_COUNT("goodbye_count"),
+  GOODBYE_LATENCY("goodbye_requests_latency");
 
   private String name;
 

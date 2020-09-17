@@ -1,108 +1,68 @@
 package com.company;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.company.common.DropwizardMetrics;
+import com.company.common.*;
 import io.prometheus.client.exporter.MetricsServlet;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.*;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
 public class Main {
-  static DropwizardMetrics dm;
 
   static class HelloServlet extends HttpServlet {
-    // Create a Dropwizard counter.
-    private static final Counter helloRequests = dm.getRegistry().counter("hello_worlds_total");
-
-    /*
-    private static final Counter helloRequests = Counter.build()
-            .name("hello_worlds_total")
-            .help("Hello Worlds Requested.")
-            .register();
-    */
-
-    static final Histogram helloRequestLatency =
-        dm.getRegistry().histogram("hello_requests_latency_seconds");
-
-    /*
-    private static final Histogram helloRequestLatency = Histogram.build()
-            .name("hello_requests_latency_seconds")
-            .help("Hello Request latency in seconds.")
-            .register();
-     */
-
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp)
         throws ServletException, IOException {
 
+      // Here we use the explicit calculation of deltaTimeMillis
       long startTime = System.currentTimeMillis();
 
       // Increment the number of requests.
-      helloRequests.inc();
+      MetricUtils.increment(Metrics.HELLO_COUNT);
 
       System.out.println(req.getRequestURI());
       System.out.println(req.getMethod());
-      System.out.println("count " + helloRequests.getCount());
+      System.out.println("count " + MetricUtils.getCounter(Metrics.HELLO_COUNT).getCount());
 
       try {
         resp.getWriter().println("Hello World!");
       } catch (Exception e) {
       }
 
-      long deltaTime = System.currentTimeMillis() - startTime;
-      System.out.println(deltaTime);
-      helloRequestLatency.update(deltaTime);
+      long deltaTimeMillis = System.currentTimeMillis() - startTime;
+      System.out.println(deltaTimeMillis);
+      MetricUtils.time(Metrics.HELLO_LATENCY, deltaTimeMillis);
     }
   }
 
   static class GoodbyeServlet extends HttpServlet {
-    // Create a Dropwizard counter.
-    private static final Counter goodbyeRequests = dm.getRegistry().counter("goodbye_worlds_total");
-
-    /*
-    private static final Counter goodbyeRequests = Counter.build()
-            .name("goodbye_worlds_total")
-            .help("Goodbye Worlds Requested.").register();
-    */
-
-    static final Histogram goodbyeRequestLatency =
-        dm.getRegistry().histogram("goodbye_requests_latency_seconds");
-
-    /*
-    private static final Histogram goodbyeRequestLatency = Histogram.build()
-            .name("goodbye_requests_latency_seconds")
-            .help("Goodbye Request latency in seconds.")
-            .register();
-     */
-
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp)
         throws ServletException, IOException {
 
-      long startTime = System.currentTimeMillis();
-
-      // Increment the number of requests.
-      goodbyeRequests.inc();
-
-      System.out.println(req.getRequestURI());
-      System.out.println(req.getMethod());
-      System.out.println("count " + goodbyeRequests.getCount());
-
+      // Here we use the Callable lambda approach
       try {
-        resp.getWriter().println("Goodbye World!");
+        MetricUtils.time(
+            Metrics.GOODBYE_LATENCY,
+            () -> {
+              // Increment the number of requests.
+              MetricUtils.increment(Metrics.GOODBYE_COUNT);
+
+              System.out.println(req.getRequestURI());
+              System.out.println(req.getMethod());
+              System.out.println(
+                  "count " + MetricUtils.getCounter(Metrics.GOODBYE_COUNT).getCount());
+
+              try {
+                resp.getWriter().println("Goodbye World!");
+              } catch (Exception e) {
+              }
+              return null;
+            });
       } catch (Exception e) {
       }
-
-      long deltaTime = System.currentTimeMillis() - startTime;
-      System.out.println(deltaTime);
-      goodbyeRequestLatency.update(deltaTime);
     }
   }
 
@@ -113,7 +73,7 @@ public class Main {
     server.setHandler(context);
 
     // Add metrics about CPU, JVM memory etc.
-    dm = DropwizardMetrics.getInstance();
+    DropwizardMetrics.getInstance();
 
     // Expose our example servlets.
     context.addServlet(new ServletHolder(new HelloServlet()), "/hello");
